@@ -1,7 +1,10 @@
 # yquest
 
+using c, c++, simple directmedia layer
+
 development purposes
 ```
+mkdir build
 cd build
 ```cmake -G "MinGW Makefiles" ..```
 cmake ..
@@ -12,6 +15,7 @@ cmake --build .
 link external libraries when building
 
 # development uses
-cmake 4.1.0
-g++ mingw64 15.2.0
-sdl3 3.2.20
+- cmake 4.1.0
+- g++ mingw64 15.2.0
+- sdl3 3.2.20
+- sdl_ttf 3.2.2
