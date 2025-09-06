@@ -2,6 +2,7 @@
 #include <SDL3/SDL_main.h> // handle platform differences for main function
 #include <SDL3_ttf/SDL_ttf.h> // text rendering
 #include "player.h"
+#include "gamepad.h"
 
 // TODO dpi scaling
 /**
@@ -24,12 +25,12 @@ int main(int argc, char* argv[])
         SDL_Quit();
         return 1;
     }
-    TTF_Font* game_font = TTF_OpenFont("../assets/roboto/Roboto-regular.ttf", 14);
-    if (!game_font)
+    TTF_Font* gameFont = TTF_OpenFont("../assets/roboto/Roboto-regular.ttf", 14);
+    if (!gameFont)
     {
         SDL_Log("Could not load font: %s", SDL_GetError());
-        SDL_Quit();
         TTF_Quit();
+        SDL_Quit();
         return 1;
     }
 
@@ -38,9 +39,9 @@ int main(int argc, char* argv[])
     if (!window)
     {
         SDL_Log("SDL_CreateWindow failed: %s", SDL_GetError());
-        SDL_Quit();
+        TTF_CloseFont(gameFont);
         TTF_Quit();
-        TTF_CloseFont(game_font);
+        SDL_Quit();
         return 1;
     }
 
@@ -49,14 +50,35 @@ int main(int argc, char* argv[])
     if (!renderer)
     {
         SDL_Log("SDL_CreateRenderer failed: %s", SDL_GetError());
-        SDL_Quit();
-        TTF_Quit();
-        TTF_CloseFont(game_font);
         SDL_DestroyWindow(window);
+        TTF_CloseFont(gameFont);
+        TTF_Quit();
+        SDL_Quit();
         return 1;
     }
 
-    // handle gamepads
+    // text renderer engine (caching, dynamic text)
+    TTF_TextEngine* textEngine = TTF_CreateRendererTextEngine(renderer);
+    if (!textEngine)
+    {
+        SDL_Log("TTF_TextEngine failed: %s", SDL_GetError());
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        TTF_CloseFont(gameFont);
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    
+    // define players
+    std::vector<Player> players;
+    players.emplace_back(400,400,1,"yelir",textEngine,gameFont);
+    players.emplace_back(500,400,2,"lori",textEngine,gameFont);
+    players.emplace_back(400,400,3,"tomtom",textEngine,gameFont);
+    players.emplace_back(400,400,4,"poncho",textEngine,gameFont);
+
+    // place gamepads in their gamepad handler
+    // SDL_Gamepad pointer: handle gamepads
     SDL_Gamepad* gamepad = NULL;
     // check for gamepads
     int numGamepads = 0;
@@ -68,16 +90,10 @@ int main(int argc, char* argv[])
     }
     if (gamepads) SDL_free(gamepads); // free any allocated memory
 
-
-    // CONSTANT VARIABLES
+    // 60 fps target
     const int TARGET_FPS = 60;
     const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS; // 16.67 ms / frame
     
-    Player player(400,400,1); // define new player id=1
-    Player p2(500,400,2); // id 2 
-    Player p3(600,400,3); // id 3
-    Player p4(700,400,4); // id 4
-
     bool running = true;
     Uint64 lastTime = SDL_GetTicks(); // ex: 15432ms
 
@@ -150,10 +166,7 @@ int main(int argc, char* argv[])
         SDL_FRect rect = {0,760,800,40};
         SDL_SetRenderDrawColor(renderer,20,20,50,255);
         SDL_RenderFillRect(renderer,&rect);
-        // renderGame(renderer);
-
-        // NOTE passing font POINTER
-        player.render(renderer, game_font);
+        player.render(renderer);
         // show result
         SDL_RenderPresent(renderer);
 
@@ -168,6 +181,8 @@ int main(int argc, char* argv[])
         lastTime = currentTime;
     }
 
+    // todo should close open gamepads?
+    TTF_DestroyTextEngine(textEngine);
     // cleanup
     TTF_CloseFont(game_font);
     TTF_Quit();
