@@ -1,17 +1,21 @@
 #include "player.h"
 #include <SDL3_ttf/SDL_ttf.h>
 
-// constructor
-Player::Player (float startX, float startY, int id)
+// constructor with member initializer list (faster)
+Player::Player (float startX, float startY, int id, const std::string& name, TTF_TextEngine* te, TTF_Font* f)
+    : x(startX)
+    , y(startY)
+    , width(20)
+    , height(40),
+    , speed(250.0f)
+    , opacity(255)
+    , id(id)
+
+    , name(name)
+    , textEngine(te)
+    , font(f)
 {
-    x = startX;
-    y = startY;
-    width = 20;
-    height = 40;
-    speed = 250.0f;
-    opacity = 255;
-    playerID = id;
-    name = "yelir";
+    name_text = TTF_CreateText(textEngine, font, name.c_str(), name.length());
 
     // different player -> different color
     switch (id)
@@ -28,6 +32,7 @@ Player::Player (float startX, float startY, int id)
 // handle movement
 void Player::update (float deltaTime, SDL_Gamepad* gamepad)
 {
+    // left stick movement
     float moveX = 0.0f;
     float moveY = 0.0f;
 
@@ -37,14 +42,17 @@ void Player::update (float deltaTime, SDL_Gamepad* gamepad)
         opacity = 100;
 
         // left stick movement
-        // floats become -100 to 100
-        float stickX = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / 32767.0f;
-        float stickY = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / 32767.0f;
+        // floats range [-,] -> [-100, 100]
+        float leftStickX = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / 32767.0f;
+        float leftStickY = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / 32767.0f;
+        // right stick aiming
+        float rightStickX = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX) / 32767.0f;
+        float rightStickY = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY) / 32767.0f;
 
         // stick input deadzone
         const float DEADZONE = 0.15f;
-        if (SDL_fabsf(stickX) > DEADZONE) moveX += stickX;
-        if (SDL_fabsf(stickY) > DEADZONE) moveY += stickY;
+        if (SDL_fabsf(leftStickX) > DEADZONE) moveX += leftStickX;
+        if (SDL_fabsf(leftStickY) > DEADZONE) moveY += leftStickY;
 
         // normalize diagonal movement
         float length = SDL_sqrtf(moveX*moveX + moveY*moveY);
@@ -78,7 +86,7 @@ void Player::update (float deltaTime, SDL_Gamepad* gamepad)
 }
 
 // render player and other ui
-void Player::render (SDL_Renderer* renderer, TTF_Font* font)
+void Player::render (SDL_Renderer* renderer)
 {
     // rectangle represents player
     SDL_FRect rect = {x,y,width,height};
@@ -87,23 +95,18 @@ void Player::render (SDL_Renderer* renderer, TTF_Font* font)
     // fill the player
     SDL_RenderFillRect(renderer,&rect);
 
-    // render player name
-    SDL_Surface* surface = TTF_RenderText_Solid(font,name.c_str(),name.length(),color);
-    if (surface)
+    // render name_text centered to the player
+    int textWidth, textHeight;
+    if (TTF_GetTextSize(name_text, &textWidth, &textHeight) == 0)
     {
-        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        float text_width, text_height;
-        SDL_GetTextureSize(texture, &text_width, &text_height);
-        // place
-        SDL_FRect dest_rect = {x,y+height,float(text_width),float(text_height)};
-        // render texture
-        SDL_RenderTexture(renderer,texture,NULL,&dest_rect);
-
-        // destroy after submitting to renderer
-        SDL_DestroyTexture(texture);
+        float draw_x = x + (width * 0.5) - (text_width * 0.5f);
+        // todo render player name
+        TTF_DrawRendererText(name_text, drawx, y + height);
     }
-    SDL_DestroySurface(surface);
+    else
+    {
+        SDL_Log("TTF_GetTextSize failed: %s", SDL_GetError());
+    }
 
     // player indicator
     SDL_FRect indicator = {(float)0+20*playerID,750,10,10};

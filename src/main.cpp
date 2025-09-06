@@ -22,8 +22,8 @@ int main(int argc, char* argv[])
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return 1;
     }
-    TTF_Font* game_font = TTF_OpenFont("../assets/roboto/Roboto-regular.ttf", 12);
-    if (!game_font)
+    TTF_Font* gameFont = TTF_OpenFont("../assets/roboto/Roboto-regular.ttf", 12);
+    if (!gameFont)
     {
         SDL_Log("Could not load font: %s", SDL_GetError());
         return 1;
@@ -48,7 +48,26 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // handle gamepads
+    // text renderer engine (caching, dynamic text)
+    TTF_TextEngine* textEngine = TTF_CreateRendererTextEngine(renderer);
+    if (!textEngine)
+    {
+        SDL_Log("TTF_TextEngine failed: %s", SDL_GetError());
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
+    
+    // define players
+    std::vector<Player> players;
+    players.emplace_back(400,400,1,"yelir",textEngine,gameFont);
+    players.emplace_back(500,400,2,"lori",textEngine,gameFont);
+    players.emplace_back(400,400,3,"tomtom",textEngine,gameFont);
+    players.emplace_back(400,400,4,"poncho",textEngine,gameFont);
+
+    // place gamepads in their gamepad handler
+    // SDL_Gamepad pointer: handle gamepads
     SDL_Gamepad* gamepad = NULL;
     // check for gamepads
     int numGamepads = 0;
@@ -60,14 +79,10 @@ int main(int argc, char* argv[])
     }
     if (gamepads) SDL_free(gamepads); // free any allocated memory
 
+    // 60 fps target
     const int TARGET_FPS = 60;
     const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS; // 16.67 ms / frame
     
-    Player player(400,400,1); // define new player id=1
-    Player p2(500,400,2); // id 2 
-    Player p3(600,400,3); // id 3
-    Player p4(700,400,4); // id 4
-
     bool running = true;
     Uint64 lastTime = SDL_GetTicks(); // ex: 15432ms
 
@@ -136,7 +151,7 @@ int main(int argc, char* argv[])
         SDL_RenderClear(renderer);
         // renderGame(renderer);
         // note this passes the pointer and not the whole font lol
-        player.render(renderer, game_font);
+        player.render(renderer, gameFont);
         // show result
         SDL_RenderPresent(renderer);
 
@@ -151,6 +166,8 @@ int main(int argc, char* argv[])
         lastTime = currentTime;
     }
 
+    // todo should close open gamepads?
+    TTF_DestroyTextEngine(textEngine);
     // cleanup
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

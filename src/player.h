@@ -5,7 +5,9 @@
 #include <string> // player name
 #include <SDL3_ttf/SDL_ttf.h>
 
-/** player class, represents entity on screen */
+/** 
+ * @class Player
+ * players represented entity on screen */
 class Player
 {
 private:
@@ -13,15 +15,19 @@ private:
     float width,height;
     float speed;
     int opacity;
-    int playerID;
+    int id;
+
     std::string name;
+    TTF_TextEngine* textEngine;
+    TTF_Font* font;
+    TTF_Text* name_text = nullptr;
     SDL_Color color; // 4 ints rgba {0,0,0,0} 
     // TODO cache the name texture
 
 public:
     Player (float startX, float startY, int id);
     void update(float deltaTime, SDL_Gamepad* gamepad);
-    void render(SDL_Renderer* renderer, TTF_Font* font);
+    void render(SDL_Renderer* renderer);
 
     // getter functions
     float getX() const {return x;}
