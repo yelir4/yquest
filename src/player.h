@@ -4,6 +4,8 @@
 #include <SDL3/SDL.h>
 #include <string> // player name
 #include <SDL3_ttf/SDL_ttf.h>
+// #include <SDL3_ttf/SDL_ttf.h> // type is used in function signature
+
 
 /** player class, represents entity on screen */
 class Player

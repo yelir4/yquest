@@ -9,6 +9,7 @@
  */
 int main(int argc, char* argv[])
 {
+
     // initialize video (includes keyboard), audio, and gamepads (controllers)
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD) == false)
     {
@@ -20,12 +21,15 @@ int main(int argc, char* argv[])
     if(TTF_Init() == false)
     {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
+        SDL_Quit();
         return 1;
     }
-    TTF_Font* game_font = TTF_OpenFont("../assets/roboto/Roboto-regular.ttf", 12);
+    TTF_Font* game_font = TTF_OpenFont("../assets/roboto/Roboto-regular.ttf", 14);
     if (!game_font)
     {
         SDL_Log("Could not load font: %s", SDL_GetError());
+        SDL_Quit();
+        TTF_Quit();
         return 1;
     }
 
@@ -35,6 +39,8 @@ int main(int argc, char* argv[])
     {
         SDL_Log("SDL_CreateWindow failed: %s", SDL_GetError());
         SDL_Quit();
+        TTF_Quit();
+        TTF_CloseFont(game_font);
         return 1;
     }
 
@@ -43,8 +49,10 @@ int main(int argc, char* argv[])
     if (!renderer)
     {
         SDL_Log("SDL_CreateRenderer failed: %s", SDL_GetError());
-        SDL_DestroyWindow(window);
         SDL_Quit();
+        TTF_Quit();
+        TTF_CloseFont(game_font);
+        SDL_DestroyWindow(window);
         return 1;
     }
 
@@ -60,6 +68,8 @@ int main(int argc, char* argv[])
     }
     if (gamepads) SDL_free(gamepads); // free any allocated memory
 
+
+    // CONSTANT VARIABLES
     const int TARGET_FPS = 60;
     const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS; // 16.67 ms / frame
     
@@ -126,16 +136,23 @@ int main(int argc, char* argv[])
             }
         }
 
-        // update game logic
+        // UPDATE GAME LOGIC
         // updateGame(deltaTime);
         player.update(deltaTime, gamepad);
 
-        // render game
+        // RENDER GAME
+        // render outside border
         SDL_SetRenderDrawColor(renderer,0,0,0,0);
         // fill window
         SDL_RenderClear(renderer);
+
+        // bottom panel
+        SDL_FRect rect = {0,760,800,40};
+        SDL_SetRenderDrawColor(renderer,20,20,50,255);
+        SDL_RenderFillRect(renderer,&rect);
         // renderGame(renderer);
-        // note this passes the pointer and not the whole font lol
+
+        // NOTE passing font POINTER
         player.render(renderer, game_font);
         // show result
         SDL_RenderPresent(renderer);
@@ -152,6 +169,8 @@ int main(int argc, char* argv[])
     }
 
     // cleanup
+    TTF_CloseFont(game_font);
+    TTF_Quit();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

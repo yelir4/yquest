@@ -1,5 +1,4 @@
 #include "player.h"
-#include <SDL3_ttf/SDL_ttf.h>
 
 // constructor
 Player::Player (float startX, float startY, int id)
@@ -81,31 +80,42 @@ void Player::update (float deltaTime, SDL_Gamepad* gamepad)
 void Player::render (SDL_Renderer* renderer, TTF_Font* font)
 {
     // rectangle represents player
+    // TODO replace with sprite
     SDL_FRect rect = {x,y,width,height};
     // set color
     SDL_SetRenderDrawColor(renderer,color.r,color.g,color.b,opacity); // blue players
-    // fill the player
+    // place the player "rect" in the renderer
     SDL_RenderFillRect(renderer,&rect);
 
-    // render player name
+    // render player NAME
+    // for ints, use std::to_string(5);
     SDL_Surface* surface = TTF_RenderText_Solid(font,name.c_str(),name.length(),color);
     if (surface)
     {
         SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
-        float text_width, text_height;
-        SDL_GetTextureSize(texture, &text_width, &text_height);
-        // place
-        SDL_FRect dest_rect = {x,y+height,float(text_width),float(text_height)};
-        // render texture
-        SDL_RenderTexture(renderer,texture,NULL,&dest_rect);
+        if (texture)
+        {
+            float text_width, text_height;
+            // how large is the text
+            SDL_GetTextureSize(texture, &text_width, &text_height);
+            // create square of text's dimensions
+            SDL_FRect dest_rect = {
+                (float)(x+(width*0.5))-(text_width/2), // center text to player sprite
+                y+height,
+                float(text_width),
+                float(text_height)
+            };
+            // render texture
+            SDL_RenderTexture(renderer,texture,NULL,&dest_rect);
 
-        // destroy after submitting to renderer
-        SDL_DestroyTexture(texture);
+            // destroy after submitting to renderer
+            SDL_DestroyTexture(texture);
+        }
+        SDL_DestroySurface(surface);
     }
-    SDL_DestroySurface(surface);
 
-    // player indicator
+    // render player indicator
     SDL_FRect indicator = {(float)0+20*playerID,750,10,10};
     SDL_RenderFillRect(renderer,&indicator);
 }
