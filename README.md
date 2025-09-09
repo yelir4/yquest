@@ -1,7 +1,7 @@
 # yquest
 
 objective: create multiplayer application (local and online) with client/server networking
-using c, c++, simple directmedia layer
+using c/c++, simple directmedia layer
 
 development purposes
 ```

@@ -14,7 +14,7 @@ find_package(SDL3_ttf REQUIRED)
 
 
 #yquest executable (place sources here)
-add_executable(yquest src/main.cpp src/player.cpp)
+add_executable(yquest src/main.cpp src/player.cpp src/gamepad.cpp)
 
 #link SDL3 libraries
 target_link_libraries(yquest PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf)

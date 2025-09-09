@@ -1,66 +1,47 @@
-#include <vector>
+#include "gamepad.h"
+#include "player.h"
 
-
-struct GamepadWrapper
+void GamepadWrapper::update(float deltaTime)
 {
-    SDL_Gamepad* gamepad; // active connection
-    int playerID; // assigned player
-    SDL_JoystickID deviceID; // gamepad permanent ID, so we can handle disconnection
+    isMoving = false;
+    float leftStickX = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / 32767.0f;
+    float leftStickY = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / 32767.0f;
+    // right stick aiming
+    float rightStickX = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX) / 32767.0f;
+    float rightStickY = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY) / 32767.0f;
 
-    GamepadInfo (SDL_Gamepad* gp, SDL_JoystickID id)
-        : gamepad(gp)
-        , deviceID(id)
-        , assignedPlayerID(-1)
-    {}
-};
+    // stick input deadzone
+    const float DEADZONE = 0.15f;
+    if (SDL_fabsf(leftStickX) > DEADZONE
+        || SDL_fabsf(leftStickY) > DEADZONE)
+    {
+        isMoving = true;
+    }
+    if (isMoving) SDL_Log("yes");
+}
 
-/**
- * @class GamepadManager
- * datastructure to manage connected gamepads
- */
-class GamepadManager
+// create gamepad indicators
+// color white if no player, otherwise copy player color
+void GamepadWrapper::render(SDL_Renderer* renderer, int index)
 {
-private:
-    // vector of gamepad wrappers
-    std::vector<GamepadWrapper> gamepads;
-
-public:
-    void addGamepad (SDL_JoystickID deviceID)
+    if (isMoving) SDL_Log("here");
+    SDL_Color rgba;
+    if (player == nullptr)
     {
-        // open the gamepad
-        SDL_Gamepad* gamepad = SDL_OpenGamepad(deviceID);
-        // place in vector
-        if (gamepad)
-        {
-            gamepads.emplace_back(gamepad, deviceID);
-        }
-
-        SDL_Log("Gamepad connected: %s (Total: %d)", SDL_GetGamepadName(gamepad), (int)gamepads.size());
+        rgba = {255,255,255,255};
+        rgba.a = (isMoving) ? 255 : 100;
     }
-
-    void removeGamepad (SDL_JoystickID deviceID)
+    else
     {
-        // iterate through @gamepads to find gamepad to clear
-        for (int i=0; i<(int)gamepads.size(); ++i)
-        {
-            if (gamepads[i].deviceID == deviceID)
-            {
-                SDL_Log("Gamepad disconnected (Player %d)", it->playerID);
-                SDL_CloseGamepad(it->gamepad);
-                gamepads.erase(it);
-            }
-        }
+        rgba = player->rgba;
+        // rgba.a = (isMoving) ? 255 : 100;
     }
+    SDL_SetRenderDrawColor(renderer,rgba.r,rgba.g,rgba.b,rgba.a);
 
-    void cyclePlayers (int gamepadIndex)
-    {
-        // just making sure we're in bounds i guess
-        // also check if there's a player to cycle through
-        if (gamepadIndex >= 0
-            && gamepadIndex < (int)gamepads.size())
-            && 
-        {
-            // should check if there's even an open player right?
-        }
-    }
-};
+    SDL_FRect indicator = {(float)10+20*index,775,10,10}; //x,y,w,h
+    SDL_RenderFillRect(renderer,&indicator);
+    // render which gamepad this thing belongs to
+    // std::string padIndex = (gamepad == nullptr) ? std::to_string(0) : std::to_string(gamepadWrapper->deviceID);
+    // TTF_Text* gamepad_text = TTF_CreateText(textEngine, font, padIndex.c_str(), padIndex.length());
+    // TTF_DrawRendererText(gamepad_text, (float)0+20*id, 740);
+}
